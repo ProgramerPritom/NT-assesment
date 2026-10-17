@@ -33,3 +33,8 @@ next-env.d.ts
 # database
 dev.db
 dev.db-journal
+
+# internal assessment docs
+plans/
+RULES.md
+PROJECT_SPECIFICATION.md
