@@ -1,33 +1,58 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, ArrowDownLeft, ArrowUpRight, Loader2, AlertCircle } from "lucide-react";
 import { MovementType, StockMovement } from "@/types/dashboard";
+
+interface ProductOption {
+  id: string;
+  name: string;
+  sku: string;
+  currentStock: number;
+}
 
 interface QuickStockModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (newMovement: StockMovement) => void;
+  initialProduct?: ProductOption | null;
+  products?: ProductOption[];
 }
 
-const DEMO_PRODUCTS = [
+const DEFAULT_PRODUCTS: ProductOption[] = [
   { id: "p1", name: "Crucial 1TB NVMe SSD", sku: "SKU-CRU-1TB", currentStock: 4 },
   { id: "p2", name: "Kingston Fury 32GB RAM", sku: "SKU-KNG-32G", currentStock: 8 },
   { id: "p3", name: "Corsair RM750e PSU", sku: "SKU-COR-750", currentStock: 45 },
   { id: "p4", name: "Logitech MX Master 3S", sku: "SKU-LOG-MX3", currentStock: 112 },
 ];
 
-export default function QuickStockModal({ isOpen, onClose, onSuccess }: QuickStockModalProps) {
-  const [selectedSku, setSelectedSku] = useState(DEMO_PRODUCTS[0].sku);
+export default function QuickStockModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  initialProduct,
+  products = DEFAULT_PRODUCTS,
+}: QuickStockModalProps) {
+  const productList = products.length > 0 ? products : DEFAULT_PRODUCTS;
+  const [selectedSku, setSelectedSku] = useState(initialProduct?.sku || productList[0]?.sku || "");
   const [type, setType] = useState<MovementType>("STOCK_IN");
   const [quantity, setQuantity] = useState<number>(10);
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (initialProduct) {
+      setSelectedSku(initialProduct.sku);
+    } else if (productList.length > 0) {
+      setSelectedSku(productList[0].sku);
+    }
+    setError("");
+  }, [initialProduct, productList]);
+
   if (!isOpen) return null;
 
-  const selectedProduct = DEMO_PRODUCTS.find((p) => p.sku === selectedSku);
+  const selectedProduct = productList.find((p) => p.sku === selectedSku);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,8 +72,7 @@ export default function QuickStockModal({ isOpen, onClose, onSuccess }: QuickSto
 
     setLoading(true);
 
-    // Simulate API roundtrip
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    await new Promise((resolve) => setTimeout(resolve, 350));
 
     const newMovement: StockMovement = {
       id: "mov-" + Date.now(),
@@ -136,9 +160,9 @@ export default function QuickStockModal({ isOpen, onClose, onSuccess }: QuickSto
               onChange={(e) => setSelectedSku(e.target.value)}
               className="w-full px-3.5 py-2 text-xs sm:text-sm text-slate-100 bg-slate-950 border border-slate-800 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
             >
-              {DEMO_PRODUCTS.map((p) => (
+              {productList.map((p) => (
                 <option key={p.sku} value={p.sku}>
-                  {p.name} ({p.sku}) — {p.currentStock} pcs available
+                  {p.name} ({p.sku}) — {p.currentStock} pcs in bin
                 </option>
               ))}
             </select>
