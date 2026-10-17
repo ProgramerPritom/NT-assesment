@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   Boxes,
@@ -24,133 +24,21 @@ import EditProductModal from "@/components/inventory/EditProductModal";
 import DeleteConfirmDialog from "@/components/inventory/DeleteConfirmDialog";
 import QuickStockModal from "@/components/inventory/QuickStockModal";
 import { StockMovement } from "@/types/dashboard";
-
-const INITIAL_PRODUCTS: Product[] = [
-  {
-    id: "p1",
-    sku: "SKU-CRU-1TB",
-    name: "Crucial 1TB NVMe PCIe 4.0 SSD",
-    category: "Storage",
-    unitPrice: 85,
-    currentStock: 4,
-    minSafetyStock: 30,
-    warehouseBin: "Zone-A1",
-    supplierId: "sup-1",
-    supplierName: "Silicon Logistics",
-    createdAt: "2026-09-10",
-  },
-  {
-    id: "p2",
-    sku: "SKU-KNG-32G",
-    name: "Kingston Fury Beast 32GB DDR5 6000MHz",
-    category: "Memory",
-    unitPrice: 110,
-    currentStock: 8,
-    minSafetyStock: 25,
-    warehouseBin: "Zone-A2",
-    supplierId: "sup-2",
-    supplierName: "Global Cloud Hardware",
-    createdAt: "2026-09-12",
-  },
-  {
-    id: "p3",
-    sku: "SKU-COR-750",
-    name: "Corsair RM750e 750W 80+ Gold Fully Modular",
-    category: "Power Supply",
-    unitPrice: 99,
-    currentStock: 45,
-    minSafetyStock: 20,
-    warehouseBin: "Zone-B2",
-    supplierId: "sup-1",
-    supplierName: "Silicon Logistics",
-    createdAt: "2026-09-15",
-  },
-  {
-    id: "p4",
-    sku: "SKU-LOG-MX3",
-    name: "Logitech MX Master 3S Wireless Mouse",
-    category: "Peripherals",
-    unitPrice: 99,
-    currentStock: 112,
-    minSafetyStock: 30,
-    warehouseBin: "Zone-C1",
-    supplierId: "sup-3",
-    supplierName: "FastTrack Cargo",
-    createdAt: "2026-09-18",
-  },
-  {
-    id: "p5",
-    sku: "SKU-SAM-2TB",
-    name: "Samsung 990 PRO 2TB PCIe 4.0 NVMe SSD",
-    category: "Storage",
-    unitPrice: 169,
-    currentStock: 50,
-    minSafetyStock: 20,
-    warehouseBin: "Zone-A3",
-    supplierId: "sup-2",
-    supplierName: "Global Cloud Hardware",
-    createdAt: "2026-09-20",
-  },
-  {
-    id: "p6",
-    sku: "SKU-AMD-780",
-    name: "AMD Ryzen 7 7800X3D Gaming Processor",
-    category: "Processors",
-    unitPrice: 449,
-    currentStock: 14,
-    minSafetyStock: 20,
-    warehouseBin: "Zone-A4",
-    supplierId: "sup-1",
-    supplierName: "Silicon Logistics",
-    createdAt: "2026-09-22",
-  },
-  {
-    id: "p7",
-    sku: "SKU-NOC-D15",
-    name: "Noctua NH-D15 chromax.black Dual-Tower Cooler",
-    category: "Cooling",
-    unitPrice: 119,
-    currentStock: 28,
-    minSafetyStock: 15,
-    warehouseBin: "Zone-B1",
-    supplierId: "sup-4",
-    supplierName: "Nordic Tech Supply",
-    createdAt: "2026-09-25",
-  },
-  {
-    id: "p8",
-    sku: "SKU-CIS-24P",
-    name: "Cisco Catalyst 1000 24-Port Gigabit Switch",
-    category: "Networking",
-    unitPrice: 580,
-    currentStock: 6,
-    minSafetyStock: 10,
-    warehouseBin: "Zone-B3",
-    supplierId: "sup-2",
-    supplierName: "Global Cloud Hardware",
-    createdAt: "2026-09-28",
-  },
-  {
-    id: "p9",
-    sku: "SKU-SEA-8TB",
-    name: "Seagate IronWolf Pro 8TB NAS HDD",
-    category: "Storage",
-    unitPrice: 199,
-    currentStock: 35,
-    minSafetyStock: 15,
-    warehouseBin: "Zone-A1",
-    supplierId: "sup-1",
-    supplierName: "Silicon Logistics",
-    createdAt: "2026-10-01",
-  },
-];
+import { MOCK_PRODUCTS } from "@/data/mockData";
+import PageSkeleton from "@/components/ui/PageSkeleton";
 
 export default function InventoryPage() {
   const toast = useToast();
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(MOCK_PRODUCTS);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "HEALTHY" | "WARNING" | "CRITICAL">("ALL");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 200);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Modals state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -224,6 +112,10 @@ export default function InventoryPage() {
     setQuickStockProduct(product);
     setIsQuickStockOpen(true);
   };
+
+  if (loading) {
+    return <PageSkeleton pillCount={4} rowCount={6} />;
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">

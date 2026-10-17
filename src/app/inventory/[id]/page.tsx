@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -26,93 +26,8 @@ import MovementTimeline, { LedgerItem } from "@/components/inventory/MovementTim
 import QuickStockModal from "@/components/inventory/QuickStockModal";
 import EditProductModal from "@/components/inventory/EditProductModal";
 import { StockMovement } from "@/types/dashboard";
-
-const CATALOG_DATABASE: Record<string, Product> = {
-  p1: {
-    id: "p1",
-    sku: "SKU-CRU-1TB",
-    name: "Crucial 1TB NVMe PCIe 4.0 SSD",
-    category: "Storage",
-    unitPrice: 85,
-    currentStock: 4,
-    minSafetyStock: 30,
-    warehouseBin: "Zone-A1",
-    supplierId: "sup-1",
-    supplierName: "Silicon Logistics",
-    createdAt: "2026-09-10",
-  },
-  p2: {
-    id: "p2",
-    sku: "SKU-KNG-32G",
-    name: "Kingston Fury Beast 32GB DDR5 6000MHz",
-    category: "Memory",
-    unitPrice: 110,
-    currentStock: 8,
-    minSafetyStock: 25,
-    warehouseBin: "Zone-A2",
-    supplierId: "sup-2",
-    supplierName: "Global Cloud Hardware",
-    createdAt: "2026-09-12",
-  },
-  p3: {
-    id: "p3",
-    sku: "SKU-COR-750",
-    name: "Corsair RM750e 750W 80+ Gold Fully Modular",
-    category: "Power Supply",
-    unitPrice: 99,
-    currentStock: 45,
-    minSafetyStock: 20,
-    warehouseBin: "Zone-B2",
-    supplierId: "sup-1",
-    supplierName: "Silicon Logistics",
-    createdAt: "2026-09-15",
-  },
-};
-
-const INITIAL_LEDGER: Record<string, LedgerItem[]> = {
-  p1: [
-    {
-      id: "led-1",
-      type: "STOCK_OUT",
-      quantity: 26,
-      balanceAfter: 4,
-      performedBy: "Alex Vance",
-      reason: "Bulk fulfillment dispatch order #8399",
-      timestamp: "Today, 14:15 PM",
-      referenceNumber: "DISP-8399",
-    },
-    {
-      id: "led-2",
-      type: "STOCK_OUT",
-      quantity: 15,
-      balanceAfter: 30,
-      performedBy: "Floor Staff Member",
-      reason: "Client pickup request #8280",
-      timestamp: "Yesterday, 16:30 PM",
-      referenceNumber: "PICK-8280",
-    },
-    {
-      id: "led-3",
-      type: "ADJUSTMENT",
-      quantity: 5,
-      balanceAfter: 45,
-      performedBy: "Alex Vance",
-      reason: "Physical cycle count discrepancy correction",
-      timestamp: "Oct 14, 2026 — 10:00 AM",
-      referenceNumber: "ADJ-1022",
-    },
-    {
-      id: "led-4",
-      type: "STOCK_IN",
-      quantity: 50,
-      balanceAfter: 50,
-      performedBy: "Alex Vance",
-      reason: "Initial supplier purchase order intake PO-0941",
-      timestamp: "Sep 10, 2026 — 09:30 AM",
-      referenceNumber: "PO-0941",
-    },
-  ],
-};
+import { findProductById, getLedgerForProduct } from "@/data/mockData";
+import DetailSkeleton from "@/components/ui/DetailSkeleton";
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -120,12 +35,18 @@ export default function ProductDetailPage() {
   const toast = useToast();
 
   const id = (params?.id as string) || "p1";
-  const initialProduct = CATALOG_DATABASE[id] || CATALOG_DATABASE["p1"];
+  const initialProduct = findProductById(id) || findProductById("p1")!;
 
+  const [loading, setLoading] = useState(true);
   const [product, setProduct] = useState<Product>(initialProduct);
-  const [ledger, setLedger] = useState<LedgerItem[]>(INITIAL_LEDGER[id] || INITIAL_LEDGER["p1"]);
+  const [ledger, setLedger] = useState<LedgerItem[]>(getLedgerForProduct(initialProduct.id));
   const [isQuickStockOpen, setIsQuickStockOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 200);
+    return () => clearTimeout(timer);
+  }, []);
 
   const status = getStockStatus(product.currentStock, product.minSafetyStock);
   const totalBinValue = product.currentStock * product.unitPrice;
@@ -157,6 +78,10 @@ export default function ProductDetailPage() {
     setProduct(updated);
     toast.success(`Product SKU ${updated.sku} settings updated.`);
   };
+
+  if (loading) {
+    return <DetailSkeleton />;
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
