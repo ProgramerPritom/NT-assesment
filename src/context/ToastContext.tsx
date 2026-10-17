@@ -1,9 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { CheckCircle2, AlertCircle, Info, X } from "lucide-react";
+import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from "lucide-react";
 
-type ToastType = "success" | "error" | "info";
+type ToastType = "success" | "error" | "info" | "warning";
 
 interface ToastItem {
   id: string;
@@ -16,6 +16,7 @@ interface ToastContextType {
     success: (msg: string) => void;
     error: (msg: string) => void;
     info: (msg: string) => void;
+    warning: (msg: string) => void;
   };
 }
 
@@ -30,7 +31,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+    }, 4500);
   }, []);
 
   const removeToast = useCallback((id: string) => {
@@ -41,6 +42,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     success: (msg: string) => addToast("success", msg),
     error: (msg: string) => addToast("error", msg),
     info: (msg: string) => addToast("info", msg),
+    warning: (msg: string) => addToast("warning", msg),
   };
 
   return (
@@ -55,11 +57,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 ? "bg-slate-900/95 border-emerald-800/80 text-emerald-300"
                 : t.type === "error"
                 ? "bg-slate-900/95 border-rose-800/80 text-rose-300"
+                : t.type === "warning"
+                ? "bg-slate-900/95 border-amber-800/80 text-amber-300"
                 : "bg-slate-900/95 border-indigo-800/80 text-indigo-300"
             }`}
           >
             {t.type === "success" && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />}
             {t.type === "error" && <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />}
+            {t.type === "warning" && <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />}
             {t.type === "info" && <Info className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />}
             <p className="text-sm font-medium text-slate-100 flex-1 leading-snug">{t.message}</p>
             <button
