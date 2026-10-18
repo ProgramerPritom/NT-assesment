@@ -62,7 +62,7 @@ export async function analyzeRestockRecommendation(
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `You are the Autonomous Supply Chain Intelligence Engine for NexusWMS.
 Analyze the following depleted inventory item and formulate an optimal restock recommendation.

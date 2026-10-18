@@ -5,6 +5,10 @@ import { POST as loginHandler } from '../app/api/auth/login/route';
 import { NextRequest } from 'next/server';
 import { prisma } from '../lib/prisma';
 
+try {
+  process.loadEnvFile?.();
+} catch {}
+
 function createRequest(url: string, method: string, body?: Record<string, unknown>, token?: string): NextRequest {
   const headers: Record<string, string> = {
     'content-type': 'application/json',
