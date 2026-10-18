@@ -1,0 +1,147 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+enum ClientStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+}
+
+enum MovementType {
+  STOCK_IN
+  STOCK_OUT
+  ADJUSTMENT
+}
+
+enum TaskStatus {
+  QUEUED
+  ANALYZING
+  AWAITING_APPROVAL
+  EXECUTED
+  REJECTED
+  FAILED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(STAFF)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movements StockMovement[]
+  decisions ApprovalDecision[]
+}
+
+model Client {
+  id          String       @id @default(cuid())
+  name        String
+  email       String       @unique
+  taxNumber   String       @unique
+  status      ClientStatus @default(PENDING_VERIFICATION)
+  creditLimit Float        @default(10000.0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  products       Product[]
+  purchaseOrders PurchaseOrder[]
+}
+
+model Product {
+  id             String   @id @default(cuid())
+  sku            String   @unique
+  name           String
+  category       String
+  unitPrice      Float
+  currentStock   Int      @default(0)
+  minSafetyStock Int      @default(10)
+  warehouseBin   String   @default("Zone-A1")
+  clientId       String?
+  client         Client?  @relation(fields: [clientId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  movements      StockMovement[]
+  workflowTasks  AIWorkflowTask[]
+  purchaseOrders PurchaseOrder[]
+}
+
+model StockMovement {
+  id        String       @id @default(cuid())
+  productId String
+  product   Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type      MovementType
+  quantity  Int
+  reason    String
+  userId    String
+  user      User         @relation(fields: [userId], references: [id])
+  createdAt DateTime     @default(now())
+}
+
+model AIWorkflowTask {
+  id              String     @id @default(cuid())
+  productId       String
+  product         Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  actionType      String
+  suggestedQty    Int
+  estimatedCost   Float
+  aiConfidence    Int
+  aiReasoning     String
+  riskScore       Int
+  riskLevel       RiskLevel
+  status          TaskStatus @default(AWAITING_APPROVAL)
+  proposedPayload String
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  decision      ApprovalDecision?
+  purchaseOrder PurchaseOrder?
+}
+
+model ApprovalDecision {
+  id          String         @id @default(cuid())
+  taskId      String         @unique
+  task        AIWorkflowTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  decision    String
+  comments    String?
+  decidedById String
+  decidedBy   User           @relation(fields: [decidedById], references: [id])
+  createdAt   DateTime       @default(now())
+}
+
+model PurchaseOrder {
+  id          String          @id @default(cuid())
+  orderNumber String          @unique
+  productId   String
+  product     Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplierId  String
+  supplier    Client          @relation(fields: [supplierId], references: [id])
+  quantity    Int
+  totalAmount Float
+  status      String          @default("CONFIRMED")
+  taskId      String?         @unique
+  task        AIWorkflowTask? @relation(fields: [taskId], references: [id])
+  createdAt   DateTime        @default(now())
+}
